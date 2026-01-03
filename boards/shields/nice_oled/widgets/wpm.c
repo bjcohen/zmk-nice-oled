@@ -5,8 +5,8 @@
 // TODO: fonts global pixel_operator_mono_12
 #include <fonts.h>
 
-LV_IMG_DECLARE(gauge);
-LV_IMG_DECLARE(grid);
+LV_IMAGE_DECLARE(gauge);
+LV_IMAGE_DECLARE(grid);
 
 #if IS_ENABLED(CONFIG_NICE_EPAPER_ON)
 #if IS_ENABLED(CONFIG_NICE_OLED_WIDGET_WPM_LUNA) ||                                                \
@@ -14,10 +14,17 @@ LV_IMG_DECLARE(grid);
     !IS_ENABLED(CONFIG_NICE_OLED_WIDGET_WPM_SPEEDOMETER)
 #else
 static void draw_gauge(lv_obj_t *canvas, const struct status_state *state) {
-    lv_draw_img_dsc_t img_dsc;
-    lv_draw_img_dsc_init(&img_dsc);
+    lv_draw_image_dsc_t img_dsc;
+    lv_draw_image_dsc_init(&img_dsc);
+    img_dsc.src = &gauge;
 
-    lv_canvas_draw_img(canvas, CONFIG_NICE_OLED_WIDGET_WPM_GAUGE_CUSTOM_X, CONFIG_NICE_OLED_WIDGET_WPM_GAUGE_CUSTOM_Y, &gauge, &img_dsc);
+    lv_layer_t layer;
+    lv_canvas_init_layer(canvas, &layer);
+    lv_area_t coords = {CONFIG_NICE_OLED_WIDGET_WPM_GAUGE_CUSTOM_X, CONFIG_NICE_OLED_WIDGET_WPM_GAUGE_CUSTOM_Y,
+                        CONFIG_NICE_OLED_WIDGET_WPM_GAUGE_CUSTOM_X + gauge.header.w - 1,
+                        CONFIG_NICE_OLED_WIDGET_WPM_GAUGE_CUSTOM_Y + gauge.header.h - 1};
+    lv_draw_image(&layer, &img_dsc, &coords);
+    lv_canvas_finish_layer(canvas, &layer);
 }
 
 static void draw_needle(lv_obj_t *canvas, const struct status_state *state) {
@@ -55,18 +62,29 @@ static void draw_needle(lv_obj_t *canvas, const struct status_state *state) {
     int needleEndX = centerX + (int)(radius * cos(angleRad));
     int needleEndY = centerY + (int)(radius * sin(angleRad));
 
-    lv_point_t points[2] = {{needleStartX, needleStartY}, {needleEndX, needleEndY}};
-    lv_canvas_draw_line(canvas, points, 2, &line_dsc);
+    lv_layer_t layer;
+    lv_canvas_init_layer(canvas, &layer);
+    line_dsc.p1.x = needleStartX;
+    line_dsc.p1.y = needleStartY;
+    line_dsc.p2.x = needleEndX;
+    line_dsc.p2.y = needleEndY;
+    lv_draw_line(&layer, &line_dsc);
+    lv_canvas_finish_layer(canvas, &layer);
 }
 #endif
 
 #if IS_ENABLED(CONFIG_NICE_OLED_WIDGET_RAW_HID) || !IS_ENABLED(CONFIG_NICE_OLED_WIDGET_WPM_GRAPH)
 #else
 static void draw_grid(lv_obj_t *canvas) {
-    lv_draw_img_dsc_t img_dsc;
-    lv_draw_img_dsc_init(&img_dsc);
+    lv_draw_image_dsc_t img_dsc;
+    lv_draw_image_dsc_init(&img_dsc);
+    img_dsc.src = &grid;
 
-    lv_canvas_draw_img(canvas, 0, 65, &grid, &img_dsc);
+    lv_layer_t layer;
+    lv_canvas_init_layer(canvas, &layer);
+    lv_area_t coords = {0, 65, grid.header.w - 1, 65 + grid.header.h - 1};
+    lv_draw_image(&layer, &img_dsc, &coords);
+    lv_canvas_finish_layer(canvas, &layer);
 }
 
 static void draw_graph(lv_obj_t *canvas, const struct status_state *state) {
@@ -113,7 +131,16 @@ static void draw_graph(lv_obj_t *canvas, const struct status_state *state) {
     }
 #endif
 
-    lv_canvas_draw_line(canvas, points, 10, &line_dsc);
+    lv_layer_t layer;
+    lv_canvas_init_layer(canvas, &layer);
+    for (int i = 0; i < 9; i++) {
+        line_dsc.p1.x = points[i].x;
+        line_dsc.p1.y = points[i].y;
+        line_dsc.p2.x = points[i + 1].x;
+        line_dsc.p2.y = points[i + 1].y;
+        lv_draw_line(&layer, &line_dsc);
+    }
+    lv_canvas_finish_layer(canvas, &layer);
 }
 #endif // IS_ENABLED(CONFIG_NICE_OLED_WIDGET_RAW_HID) ||
        // !IS_ENABLED(CONFIG_NICE_OLED_WIDGET_WPM_GRAPH)
@@ -143,7 +170,13 @@ static void draw_label(lv_obj_t *canvas, const struct status_state *state) {
 
     lv_draw_label_dsc_t label_left_dsc;
     init_label_dsc(&label_left_dsc, LVGL_FOREGROUND, DRAW_LABEL_FONTS, LV_TEXT_ALIGN_LEFT);
-    lv_canvas_draw_text(canvas, 0, DRAW_LABEL_WMP_Y, 25, &label_left_dsc, DRAW_LABEL_WMP);
+
+    lv_layer_t layer;
+    lv_canvas_init_layer(canvas, &layer);
+    lv_area_t wpm_label_coords = {0, DRAW_LABEL_WMP_Y, 24, DRAW_LABEL_WMP_Y + 15};
+    label_left_dsc.text = DRAW_LABEL_WMP;
+    lv_draw_label(&layer, &label_left_dsc, &wpm_label_coords);
+    lv_canvas_finish_layer(canvas, &layer);
 
     lv_draw_label_dsc_t label_dsc_wpm;
     init_label_dsc(&label_dsc_wpm, LVGL_FOREGROUND, DRAW_LABEL_FONTS, DRAW_LABEL_TEXT_ALIGN);
@@ -151,17 +184,28 @@ static void draw_label(lv_obj_t *canvas, const struct status_state *state) {
     char wpm_text[6] = {};
 
     snprintf(wpm_text, sizeof(wpm_text), "%d", state->wpm[9]);
-    lv_canvas_draw_text(canvas, DRAW_LABEL_WMP_X, DRAW_LABEL_WMP_Y, 42, &label_dsc_wpm, wpm_text);
+    lv_canvas_init_layer(canvas, &layer);
+    lv_area_t wpm_value_coords = {DRAW_LABEL_WMP_X, DRAW_LABEL_WMP_Y, DRAW_LABEL_WMP_X + 41, DRAW_LABEL_WMP_Y + 15};
+    label_dsc_wpm.text = wpm_text;
+    lv_draw_label(&layer, &label_dsc_wpm, &wpm_value_coords);
+    lv_canvas_finish_layer(canvas, &layer);
 }
 #endif // IS_ENABLED(CONFIG_NICE_OLED_WIDGET_WPM_NUMBER)
 
 #else // CONFIG_NICE_EPAPER_ON
 #if IS_ENABLED(CONFIG_NICE_OLED_WIDGET_WPM_SPEEDOMETER)
 static void draw_gauge(lv_obj_t *canvas, const struct status_state *state) {
-    lv_draw_img_dsc_t img_dsc;
-    lv_draw_img_dsc_init(&img_dsc);
+    lv_draw_image_dsc_t img_dsc;
+    lv_draw_image_dsc_init(&img_dsc);
+    img_dsc.src = &gauge;
 
-    lv_canvas_draw_img(canvas, CONFIG_NICE_OLED_WIDGET_WPM_GAUGE_CUSTOM_X, CONFIG_NICE_OLED_WIDGET_WPM_GAUGE_CUSTOM_Y, &gauge, &img_dsc);
+    lv_layer_t layer;
+    lv_canvas_init_layer(canvas, &layer);
+    lv_area_t coords = {CONFIG_NICE_OLED_WIDGET_WPM_GAUGE_CUSTOM_X, CONFIG_NICE_OLED_WIDGET_WPM_GAUGE_CUSTOM_Y,
+                        CONFIG_NICE_OLED_WIDGET_WPM_GAUGE_CUSTOM_X + gauge.header.w - 1,
+                        CONFIG_NICE_OLED_WIDGET_WPM_GAUGE_CUSTOM_Y + gauge.header.h - 1};
+    lv_draw_image(&layer, &img_dsc, &coords);
+    lv_canvas_finish_layer(canvas, &layer);
 }
 
 static void draw_needle(lv_obj_t *canvas, const struct status_state *state) {
@@ -194,23 +238,19 @@ static void draw_needle(lv_obj_t *canvas, const struct status_state *state) {
     float angleDeg = 225 + ((float)value / max) * 90;
     float angleRad = angleDeg * (3.14159 / 180.0f);
 
-    /* int needleStartX = 33 + (int)(13 * cos(4.71239)); // 33 + (int)(13 * 0) =
-    33
-    * int needleStartY = 66 + (int)(13 * sin(4.71239)); // 66 + (int)(13 * -1) =
-    53
-    * int needleEndX = 33 + (int)(25.45585 * cos(4.71239)); // 33 +
-    (int)(25.45585 * 0) = 33
-    * int needleEndY = 66 + (int)(25.45585 * sin(4.71239)); 66 + (int)(25.45585 *
-    -1) = 40 */
     int needleStartX = centerX + (int)(offset * cos(angleRad));
     int needleStartY = centerY + (int)(offset * sin(angleRad));
     int needleEndX = centerX + (int)(radius * cos(angleRad));
     int needleEndY = centerY + (int)(radius * sin(angleRad));
 
-    lv_point_t points[2] = {{needleStartX, needleStartY}, {needleEndX, needleEndY}};
-    // canvas, points, number of points, line_dsc
-    lv_canvas_draw_line(canvas, points, 2, &line_dsc);
-    // lv_canvas_draw_line(canvas, points, 2, &line_dsc);
+    lv_layer_t layer;
+    lv_canvas_init_layer(canvas, &layer);
+    line_dsc.p1.x = needleStartX;
+    line_dsc.p1.y = needleStartY;
+    line_dsc.p2.x = needleEndX;
+    line_dsc.p2.y = needleEndY;
+    lv_draw_line(&layer, &line_dsc);
+    lv_canvas_finish_layer(canvas, &layer);
 }
 #endif // IS_ENABLED(CONFIG_NICE_OLED_WIDGET_WPM_SPEEDOMETER)
 
@@ -220,10 +260,15 @@ static void draw_needle(lv_obj_t *canvas, const struct status_state *state) {
     !IS_ENABLED(CONFIG_NICE_OLED_WIDGET_WPM_GRAPH)
 #else
 static void draw_grid(lv_obj_t *canvas) {
-    lv_draw_img_dsc_t img_dsc;
-    lv_draw_img_dsc_init(&img_dsc);
+    lv_draw_image_dsc_t img_dsc;
+    lv_draw_image_dsc_init(&img_dsc);
+    img_dsc.src = &grid;
 
-    lv_canvas_draw_img(canvas, -1, 95, &grid, &img_dsc);
+    lv_layer_t layer;
+    lv_canvas_init_layer(canvas, &layer);
+    lv_area_t coords = {-1, 95, -1 + grid.header.w - 1, 95 + grid.header.h - 1};
+    lv_draw_image(&layer, &img_dsc, &coords);
+    lv_canvas_finish_layer(canvas, &layer);
 }
 
 static void draw_graph(lv_obj_t *canvas, const struct status_state *state) {
@@ -273,7 +318,16 @@ static void draw_graph(lv_obj_t *canvas, const struct status_state *state) {
     }
 #endif
 
-    lv_canvas_draw_line(canvas, points, 10, &line_dsc);
+    lv_layer_t layer;
+    lv_canvas_init_layer(canvas, &layer);
+    for (int i = 0; i < 9; i++) {
+        line_dsc.p1.x = points[i].x;
+        line_dsc.p1.y = points[i].y;
+        line_dsc.p2.x = points[i + 1].x;
+        line_dsc.p2.y = points[i + 1].y;
+        lv_draw_line(&layer, &line_dsc);
+    }
+    lv_canvas_finish_layer(canvas, &layer);
 }
 #endif
 
@@ -287,13 +341,20 @@ static void draw_label(lv_obj_t *canvas, const struct status_state *state) {
 
     snprintf(wpm_text, sizeof(wpm_text), "%d", state->wpm[9]);
     // if wpm < 10, else if wpm => 10 and wpm < 100, else wpm >= 100
+    int x_offset = 0;
     if (state->wpm[9] < 10) {
-        lv_canvas_draw_text(canvas, CONFIG_NICE_OLED_WIDGET_WPM_LABEL_CUSTOM_X + 5, CONFIG_NICE_OLED_WIDGET_WPM_LABEL_CUSTOM_Y, 50, &label_dsc_wpm, wpm_text);
+        x_offset = 5;
     } else if (state->wpm[9] >= 10 && state->wpm[9] < 100) {
-        lv_canvas_draw_text(canvas, CONFIG_NICE_OLED_WIDGET_WPM_LABEL_CUSTOM_X + 2, CONFIG_NICE_OLED_WIDGET_WPM_LABEL_CUSTOM_Y, 50, &label_dsc_wpm, wpm_text);
-    } else {
-        lv_canvas_draw_text(canvas, CONFIG_NICE_OLED_WIDGET_WPM_LABEL_CUSTOM_X, CONFIG_NICE_OLED_WIDGET_WPM_LABEL_CUSTOM_Y, 50, &label_dsc_wpm, wpm_text);
+        x_offset = 2;
     }
+
+    lv_layer_t layer;
+    lv_canvas_init_layer(canvas, &layer);
+    lv_area_t coords = {CONFIG_NICE_OLED_WIDGET_WPM_LABEL_CUSTOM_X + x_offset, CONFIG_NICE_OLED_WIDGET_WPM_LABEL_CUSTOM_Y,
+                        CONFIG_NICE_OLED_WIDGET_WPM_LABEL_CUSTOM_X + x_offset + 49, CONFIG_NICE_OLED_WIDGET_WPM_LABEL_CUSTOM_Y + 11};
+    label_dsc_wpm.text = wpm_text;
+    lv_draw_label(&layer, &label_dsc_wpm, &coords);
+    lv_canvas_finish_layer(canvas, &layer);
 }
 #endif // IS_ENABLED(CONFIG_NICE_OLED_WIDGET_WPM_NUMBER)
 #endif // CONFIG_NICE_EPAPER_ON

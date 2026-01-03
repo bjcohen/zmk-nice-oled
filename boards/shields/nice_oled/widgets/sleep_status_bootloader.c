@@ -17,9 +17,9 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 
 static sys_slist_t widgets = SYS_SLIST_STATIC_INIT(&widgets);
 
-LV_IMG_DECLARE(vim_32x128);
-LV_IMG_DECLARE(vim_68x160);
-LV_IMG_DECLARE(sleep_oled);
+LV_IMAGE_DECLARE(vim_32x128);
+LV_IMAGE_DECLARE(vim_68x160);
+LV_IMAGE_DECLARE(sleep_oled);
 
 // TODO: START bootloader
 static void hide_and_restore_cb(lv_timer_t *timer) {
