@@ -21,10 +21,10 @@ static sys_slist_t widgets = SYS_SLIST_STATIC_INIT(&widgets);
 #define LED_CLCK 0x02
 #define LED_SLCK 0x04
 
-LV_IMAGE_DECLARE(dog_bark1_90);
-LV_IMAGE_DECLARE(dog_bark2_90);
-LV_IMAGE_DECLARE(bongo_cat_double_tap2_03);
-LV_IMAGE_DECLARE(bongo_cat_double_tap1_04);
+LV_IMG_DECLARE(dog_bark1_90);
+LV_IMG_DECLARE(dog_bark2_90);
+LV_IMG_DECLARE(bongo_cat_double_tap2_03);
+LV_IMG_DECLARE(bongo_cat_double_tap1_04);
 
 #if IS_ENABLED(CONFIG_NICE_OLED_WIDGET_HID_INDICATORS_BONGO_CAT)
 const lv_img_dsc_t *hid_anim_imgs[] = {&bongo_cat_double_tap2_03, &bongo_cat_double_tap1_04};

@@ -1,8 +1,6 @@
 #include "util.h"
 #include <ctype.h>
-#include <string.h>
 #include <zephyr/kernel.h>
-#include <lvgl.h>
 
 void to_uppercase(char *str) {
   for (int i = 0; str[i] != '\0'; i++) {
@@ -10,85 +8,31 @@ void to_uppercase(char *str) {
   }
 }
 
-// Helper to get pixel from 1-bit buffer
-static inline uint8_t get_pixel_1bit(const uint8_t *buf, int32_t x, int32_t y, int32_t stride) {
-  int32_t byte_idx = y * stride + (x >> 3);
-  int32_t bit_idx = 7 - (x & 7);  // MSB first
-  return (buf[byte_idx] >> bit_idx) & 1;
-}
-
-// Helper to set pixel in 1-bit buffer
-static inline void set_pixel_1bit(uint8_t *buf, int32_t x, int32_t y, int32_t stride, uint8_t val) {
-  int32_t byte_idx = y * stride + (x >> 3);
-  int32_t bit_idx = 7 - (x & 7);  // MSB first
-  if (val) {
-    buf[byte_idx] |= (1 << bit_idx);
-  } else {
-    buf[byte_idx] &= ~(1 << bit_idx);
-  }
-}
-
 void rotate_canvas(lv_obj_t *canvas, lv_color_t cbuf[]) {
-  // Source canvas is 160x68 (CANVAS_HEIGHT x CANVAS_WIDTH)
-  // We rotate 90 degrees CW to get 68x160 for the physical display
-  //
-  // The canvas buffer layout for 160x68 at 1bpp:
-  // - stride = (160 + 7) / 8 = 20 bytes per row
-  // - total = 20 * 68 = 1360 bytes
-  //
-  // After 90 CW rotation, we have 68x160:
-  // - new_stride = (68 + 7) / 8 = 9 bytes per row
-  // - total = 9 * 160 = 1440 bytes
-  //
-  // Rotation formula (90 CW): dst(x,y) = src(src_h - 1 - y, x)
-  // Where src is 160x68, dst is 68x160
+  static lv_color_t cbuf_tmp[CANVAS_HEIGHT * CANVAS_HEIGHT];
+  memcpy(cbuf_tmp, cbuf, sizeof(cbuf_tmp));
 
-  int32_t src_w = CANVAS_HEIGHT;  // 160
-  int32_t src_h = CANVAS_WIDTH;   // 68
-  int32_t src_stride = (src_w + 7) / 8;  // 20
+  /* lv_img_dsc_t img; */
+  /* img.data = (void *)cbuf_tmp; */
+  /* img.header.cf = LV_COLOR_FORMAT_NATIVE; */
+  /* img.header.w = CANVAS_HEIGHT; */
+  /* img.header.h = CANVAS_HEIGHT; */
 
-  int32_t dst_w = src_h;  // 68
-  int32_t dst_h = src_w;  // 160
-  int32_t dst_stride = (dst_w + 7) / 8;  // 9
+  /* lv_canvas_fill_bg(canvas, LVGL_BACKGROUND, LV_OPA_COVER); */
+  /* lv_canvas_transform(canvas, &img, 900, LV_IMG_ZOOM_NONE, -1, 0, */
+  /*                     CANVAS_HEIGHT / 2, CANVAS_HEIGHT / 2, false); */
 
-  // Temp buffer for rotated image
-  static uint8_t rotated_buf[9 * 160];  // 1440 bytes
-  memset(rotated_buf, 0, sizeof(rotated_buf));
-
-  uint8_t *src_buf = (uint8_t *)cbuf;
-
-  // Rotate 90 degrees clockwise
-  for (int32_t sy = 0; sy < src_h; sy++) {
-    for (int32_t sx = 0; sx < src_w; sx++) {
-      uint8_t pixel = get_pixel_1bit(src_buf, sx, sy, src_stride);
-      // 90 CW: dst_x = src_h - 1 - sy, dst_y = sx
-      int32_t dx = src_h - 1 - sy;
-      int32_t dy = sx;
-      set_pixel_1bit(rotated_buf, dx, dy, dst_stride, pixel);
-    }
-  }
-
-  // Now we need to copy rotated data back and update canvas
-  // The trick: we write the rotated 68x160 data but LVGL still thinks canvas is 160x68
-  // This works because display driver reads the raw buffer
-  memcpy(cbuf, rotated_buf, sizeof(rotated_buf));
-
-  lv_obj_invalidate(canvas);
+  const int32_t stride = 8;
+  lv_draw_sw_rotate(cbuf_tmp, cbuf, CANVAS_HEIGHT, CANVAS_HEIGHT, stride,
+                    stride, LV_DISPLAY_ROTATION_90, LV_COLOR_FORMAT_NATIVE);
 }
 
-void draw_background(lv_obj_t *canvas) {
+void draw_background(lv_layer_t *layer) {
   lv_draw_rect_dsc_t rect_black_dsc;
   init_rect_dsc(&rect_black_dsc, LVGL_BACKGROUND);
 
-  lv_layer_t layer;
-  lv_canvas_init_layer(canvas, &layer);
-
-  // Canvas is CANVAS_HEIGHT x CANVAS_WIDTH (160x68), fill entire area
-  lv_area_t coords = {0, 0, CANVAS_HEIGHT - 1, CANVAS_WIDTH - 1};
-
-  lv_draw_rect(&layer, &rect_black_dsc, &coords);
-
-  lv_canvas_finish_layer(canvas, &layer);
+  layer_draw_rect(layer, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT,
+                      &rect_black_dsc);
 }
 
 void init_label_dsc(lv_draw_label_dsc_t *label_dsc, lv_color_t color,
@@ -99,9 +43,32 @@ void init_label_dsc(lv_draw_label_dsc_t *label_dsc, lv_color_t color,
   label_dsc->align = align;
 }
 
+void layer_draw_label(lv_layer_t *layer, int32_t x, int32_t y, int32_t w,
+                       int32_t h, lv_draw_label_dsc_t *dsc, const char* text) {
+  dsc->text = text;
+  lv_area_t coords = {x, y, x + w - 1, y + h - 1};
+
+  lv_draw_label(layer, dsc, &coords);
+}
+
+void layer_draw_image(lv_layer_t *layer, int32_t x, int32_t y, const lv_image_dsc_t *img,
+                       lv_draw_image_dsc_t *dsc) {
+  dsc->src = img;
+  lv_area_t coords = {x, y, x + img->header.w - 1, y + img->header.h - 1};
+
+  lv_draw_image(layer, dsc, &coords);
+}
+
 void init_rect_dsc(lv_draw_rect_dsc_t *rect_dsc, lv_color_t bg_color) {
   lv_draw_rect_dsc_init(rect_dsc);
   rect_dsc->bg_color = bg_color;
+}
+
+void layer_draw_rect(lv_layer_t *layer, int32_t x, int32_t y, int32_t w,
+                      int32_t h, lv_draw_rect_dsc_t *dsc) {
+  lv_area_t coords = {x, y, x + w - 1, y + h - 1};
+
+  lv_draw_rect(layer, dsc, &coords);
 }
 
 void init_line_dsc(lv_draw_line_dsc_t *line_dsc, lv_color_t color,
