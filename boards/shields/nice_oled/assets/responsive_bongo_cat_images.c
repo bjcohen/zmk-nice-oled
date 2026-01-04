@@ -52,8 +52,11 @@ const LV_ATTRIBUTE_MEM_ALIGN LV_ATTRIBUTE_LARGE_CONST LV_ATTRIBUTE_IMG_FAST_IMG1
         0xff, 0xff,
 };
 
-const lv_img_dsc_t fast_img1 = {
-    
+const lv_image_dsc_t fast_img1 = {
+    .header.magic = LV_IMAGE_HEADER_MAGIC,
+    .header.flags = 0,
+    .header.stride = 4,
+    .header.reserved_2 = 0,
     .header.w = 128,
     .header.h = 32,
     .data_size = 520,
@@ -109,8 +112,11 @@ const LV_ATTRIBUTE_MEM_ALIGN LV_ATTRIBUTE_LARGE_CONST LV_ATTRIBUTE_IMG_FAST_IMG2
         0xff, 0xff,
 };
 
-const lv_img_dsc_t fast_img2 = {
-    
+const lv_image_dsc_t fast_img2 = {
+    .header.magic = LV_IMAGE_HEADER_MAGIC,
+    .header.flags = 0,
+    .header.stride = 4,
+    .header.reserved_2 = 0,
     .header.w = 128,
     .header.h = 32,
     .data_size = 520,
@@ -166,8 +172,11 @@ const LV_ATTRIBUTE_MEM_ALIGN LV_ATTRIBUTE_LARGE_CONST LV_ATTRIBUTE_IMG_IDLE_IMG1
         0xff, 0xff,
 };
 
-const lv_img_dsc_t idle_img1 = {
-    
+const lv_image_dsc_t idle_img1 = {
+    .header.magic = LV_IMAGE_HEADER_MAGIC,
+    .header.flags = 0,
+    .header.stride = 4,
+    .header.reserved_2 = 0,
     .header.w = 128,
     .header.h = 32,
     .data_size = 520,
@@ -223,8 +232,11 @@ const LV_ATTRIBUTE_MEM_ALIGN LV_ATTRIBUTE_LARGE_CONST LV_ATTRIBUTE_IMG_IDLE_IMG2
         0xff, 0xff,
 };
 
-const lv_img_dsc_t idle_img2 = {
-    
+const lv_image_dsc_t idle_img2 = {
+    .header.magic = LV_IMAGE_HEADER_MAGIC,
+    .header.flags = 0,
+    .header.stride = 4,
+    .header.reserved_2 = 0,
     .header.w = 128,
     .header.h = 32,
     .data_size = 520,
@@ -280,8 +292,11 @@ const LV_ATTRIBUTE_MEM_ALIGN LV_ATTRIBUTE_LARGE_CONST LV_ATTRIBUTE_IMG_IDLE_IMG3
         0xff, 0xff,
 };
 
-const lv_img_dsc_t idle_img3 = {
-    
+const lv_image_dsc_t idle_img3 = {
+    .header.magic = LV_IMAGE_HEADER_MAGIC,
+    .header.flags = 0,
+    .header.stride = 4,
+    .header.reserved_2 = 0,
     .header.w = 128,
     .header.h = 32,
     .data_size = 520,
@@ -337,8 +352,11 @@ const LV_ATTRIBUTE_MEM_ALIGN LV_ATTRIBUTE_LARGE_CONST LV_ATTRIBUTE_IMG_IDLE_IMG4
         0xff, 0xff,
 };
 
-const lv_img_dsc_t idle_img4 = {
-    
+const lv_image_dsc_t idle_img4 = {
+    .header.magic = LV_IMAGE_HEADER_MAGIC,
+    .header.flags = 0,
+    .header.stride = 4,
+    .header.reserved_2 = 0,
     .header.w = 128,
     .header.h = 32,
     .data_size = 520,
@@ -394,8 +412,11 @@ const LV_ATTRIBUTE_MEM_ALIGN LV_ATTRIBUTE_LARGE_CONST LV_ATTRIBUTE_IMG_IDLE_IMG5
         0xff, 0xff,
 };
 
-const lv_img_dsc_t idle_img5 = {
-    
+const lv_image_dsc_t idle_img5 = {
+    .header.magic = LV_IMAGE_HEADER_MAGIC,
+    .header.flags = 0,
+    .header.stride = 4,
+    .header.reserved_2 = 0,
     .header.w = 128,
     .header.h = 32,
     .data_size = 520,
@@ -452,8 +473,11 @@ const LV_ATTRIBUTE_MEM_ALIGN LV_ATTRIBUTE_LARGE_CONST LV_ATTRIBUTE_IMG_SLOW_IMG 
         0xff, 0xff,
 };
 
-const lv_img_dsc_t slow_img = {
-    
+const lv_image_dsc_t slow_img = {
+    .header.magic = LV_IMAGE_HEADER_MAGIC,
+    .header.flags = 0,
+    .header.stride = 4,
+    .header.reserved_2 = 0,
     .header.w = 128,
     .header.h = 32,
     .data_size = 520,
